@@ -1,0 +1,67 @@
+CREATE database Test;
+create schema test;
+
+
+
+ --create json format
+create or replace file format json_format
+  type = 'json';  
+  
+  
+create or replace stage Snow_stage url="s3://comprehende-output" 
+credentials=(aws_key_id='AKIAX7RKZAWDADUYS2RW'
+aws_secret_key='v7AJUSfqsEvesmeAocq6PNwL7N5Fmqs9/VDiuuWe')
+file_format = json_format;
+
+list @Snow_stage;
+
+
+
+--Specific Element Extraction
+select $1[0] :file_name::varchar,$1[0] :Sentiment::varchar,$1[0] :SentimentScore:Positive,$1[0] :SentimentScore:Negative,$1[0] :SentimentScore:Neutral,$1[0] :SentimentScore:Mixed,TO_TIMESTAMP_NTZ(current_timestamp) from @Snow_stage;
+
+
+
+CREATE or replace TABLE Test.test.audio_analysis2(
+    filename    VARCHAR(16777216)
+    ,final_result VARCHAR(16777216)
+   ,positive    float
+   ,negative    float
+   ,neutral   float
+    ,mixed      float
+   ,load_timestamp timestamp default TO_TIMESTAMP_NTZ(current_timestamp));
+
+
+create or replace pipe spa 
+auto_ingest=true as
+copy into test.test.audio_analysis2 from 
+(select $1[0] :file_name::varchar,$1[0] :Sentiment::varchar,$1[0] :SentimentScore:Positive,$1[0] :SentimentScore:Negative,$1[0] :SentimentScore:Neutral,$1[0] :SentimentScore:Mixed,TO_TIMESTAMP_NTZ(current_timestamp) from @Snow_stage);
+
+
+
+ 
+show pipes;
+
+
+select * from audio_analysis2;--42 
+
+
+CREATE or replace TABLE Test.test.audio_metadata(
+    filename    VARCHAR(16777216)
+   ,initiation timestamp default TO_TIMESTAMP_NTZ(current_timestamp));
+   
+insert into audio_metadata values('sample.mp3',current_timestamp),('sample2.mp3',current_timestamp);
+
+
+create or replace view test.test.visualization as
+select am.initiation
+    ,ad.final_result 
+   ,ad.positive 
+   ,ad.negative
+   ,ad.neutral 
+    ,ad.mixed from audio_analysis2 ad join audio_metadata am
+   on ad.filename=am.filename;
+   
+   
+   select * from visualization;
+
