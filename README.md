@@ -6,6 +6,9 @@
 ## Steps to setup projects
 
 1.Create a lamda function using boto 3 which will consume mp3 file from s3 bucket and will transcript and will save in JSON file.
+
 2.Create another lambda function which will consume transcripted file and will pass the data in comprehend to analyse the data.
+
 3.Then analysed data will get loaded into the s3 bucket from there we will pull in snowflake using snowpipe.
+
 4.then will use the data to visualize the analysis
